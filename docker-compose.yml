@@ -1,0 +1,65 @@
+# =====================================================
+# Wissenswerkstatt - Portainer Stack
+# =====================================================
+# Wichtig für Portainer:
+#   1. In Portainer: Stacks → Add Stack → Git repository
+#      oder diesen Inhalt als "Web editor" einfügen.
+#   2. Vorher: In GitHub die Repo-Variablen GHCR_USER / IMAGE_NAME setzen
+#      (siehe README). IMAGE_TAG ist standardmäßig "latest".
+#   3. Auto-Update läuft über den Watchtower-Service.
+# =====================================================
+
+services:
+  wissenswerkstatt:
+    image: ${GHCR_USER:-ghcr.io/dein-user}/${IMAGE_NAME:-wissenswerkstatt}:${IMAGE_TAG:-latest}
+    container_name: wissenswerkstatt
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    environment:
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-1500}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.4}
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8080
+      APP_SECRET: ${APP_SECRET:-}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Berlin}
+      DATA_DIR: /app/data
+    volumes:
+      - wissenswerkstatt_data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8080/api/health', timeout=3).status == 200 else sys.exit(1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "wissenswerkstatt.role=app"
+
+  # ---- Auto-Update-Service -------------------------------
+  # Watchtower prüft alle ${WATCHTOWER_POLL_INTERVAL} Sekunden
+  # das Image und ersetzt laufende Container, wenn es ein
+  # neueres Tag gibt. Labels oben schalten das pro Container an.
+  watchtower:
+    image: containrrr/watchtower
+    container_name: wissenswerkstatt-watchtower
+    restart: unless-stopped
+    environment:
+      TZ: ${APP_TIMEZONE:-Europe/Berlin}
+      WATCHTOWER_POLL_INTERVAL: ${WATCHTOWER_POLL_INTERVAL:-86400}
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_INCLUDE_STOPPED: "false"
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_DEBUG: ${WATCHTOWER_DEBUG:-false}
+      WATCHTOWER_LOG_LEVEL: info
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - "wissenswerkstatt.role=watchtower"
+
+volumes:
+  wissenswerkstatt_data:
+    name: wissenswerkstatt_data

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wissenswerkstatt</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">⚙</span>
+      <h1>Wissenswerkstatt</h1>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" data-tab="session">Sitzung</button>
+      <button class="tab" data-tab="review">Wiederholung <span id="dueBadge" class="badge">0</span></button>
+      <button class="tab" data-tab="progress">Fortschritt</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ============== SESSION ============== -->
+    <section id="tab-session" class="tab-panel active">
+      <div id="sessionSetup" class="card">
+        <h2>Neue Sitzung starten</h2>
+        <p class="muted">
+          Die Wissenswerkstatt beginnt jede Sitzung zuerst mit fälligen Wiederholungen,
+          bevor ein neues Thema drankommt. Wähle optional ein Themenfeld.
+        </p>
+        <div class="topic-grid" id="topicGrid"></div>
+        <div class="row">
+          <button id="startBtn" class="primary">Sitzung starten</button>
+          <span id="setupHint" class="muted"></span>
+        </div>
+      </div>
+
+      <div id="sessionActive" class="card hidden">
+        <div class="session-head">
+          <h2>Laufende Sitzung <span id="sessionTopicLabel" class="muted"></span></h2>
+          <button id="endBtn" class="ghost">Sitzung beenden</button>
+        </div>
+        <div id="chat" class="chat"></div>
+        <form id="chatForm" class="composer">
+          <textarea
+            id="chatInput"
+            rows="2"
+            placeholder="Antworte in eigenen Worten …"
+            autocomplete="off"
+          ></textarea>
+          <button type="submit" class="primary">Senden</button>
+        </form>
+      </div>
+
+      <div id="sessionSummary" class="card hidden">
+        <h2>Sitzungsabschluss</h2>
+        <h3>3 Merksätze</h3>
+        <ol id="merksaetze"></ol>
+        <h3>Neue Karteikarten</h3>
+        <ul id="newCards" class="card-list"></ul>
+        <h3>Wie sicher hast du dich gefühlt?</h3>
+        <div class="rating">
+          <label><input type="radio" name="rating" value="0" /> 0 – gar nicht</label>
+          <label><input type="radio" name="rating" value="1" /> 1</label>
+          <label><input type="radio" name="rating" value="2" /> 2</label>
+          <label><input type="radio" name="rating" value="3" /> 3</label>
+          <label><input type="radio" name="rating" value="4" /> 4</label>
+          <label><input type="radio" name="rating" value="5" /> 5 – sehr sicher</label>
+        </div>
+        <div class="row">
+          <button id="confirmEndBtn" class="primary">Bewertung speichern</button>
+          <button id="newSessionBtn" class="ghost">Neue Sitzung</button>
+        </div>
+        <p id="nextReviewHint" class="muted"></p>
+      </div>
+    </section>
+
+    <!-- ============== REVIEW ============== -->
+    <section id="tab-review" class="tab-panel">
+      <div class="card">
+        <h2>Fällige Karteikarten</h2>
+        <p class="muted">
+          Drücke <strong>Frage zeigen</strong>, antworte mündlich oder im Kopf,
+          und bewerte dann deine Erinnerung mit 0–5.
+        </p>
+        <div id="reviewList" class="review-list"></div>
+      </div>
+    </section>
+
+    <!-- ============== PROGRESS ============== -->
+    <section id="tab-progress" class="tab-panel">
+      <div class="card">
+        <h2>Dein Fortschritt</h2>
+        <div id="progressGrid" class="stat-grid"></div>
+        <h3>Wissen nach Themenfeld</h3>
+        <div id="topicStats" class="topic-stats"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
