@@ -1,17 +1,17 @@
 # =====================================================
-# Wissenswerkstatt - Portainer Stack
+# Wissenswerkstatt - Portainer Stack (lokal gebaut)
 # =====================================================
-# Wichtig für Portainer:
-#   1. In Portainer: Stacks → Add Stack → Git repository
-#      oder diesen Inhalt als "Web editor" einfügen.
-#   2. Vorher: In GitHub die Repo-Variablen GHCR_USER / IMAGE_NAME setzen
-#      (siehe README). IMAGE_TAG ist standardmäßig "latest".
-#   3. Auto-Update läuft über den Watchtower-Service.
+# Variante: Portainer baut das Image DIREKT aus dem Git-Repo,
+# kein Pull von GHCR. Damit umgehen wir Visibility- und
+# Credential-Themen komplett.
 # =====================================================
 
 services:
   wissenswerkstatt:
-    image: ${GHCR_USER:-ghcr.io/dein-user}/${IMAGE_NAME:-wissenswerkstatt}:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: wissenswerkstatt:local
     container_name: wissenswerkstatt
     restart: unless-stopped
     ports:
@@ -34,15 +34,16 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 20s
+      start_period: 30s
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
       - "wissenswerkstatt.role=app"
 
   # ---- Auto-Update-Service -------------------------------
-  # Watchtower prüft alle ${WATCHTOWER_POLL_INTERVAL} Sekunden
-  # das Image und ersetzt laufende Container, wenn es ein
-  # neueres Tag gibt. Labels oben schalten das pro Container an.
+  # Watchtower erkennt neue Images mit dem Tag "local" und
+  # ersetzt den Container. Wir triggern das Update manuell
+  # in Portainer (Pull & redeploy), Watchtower läuft trotzdem
+  # als Backup und räumt alte Images auf.
   watchtower:
     image: containrrr/watchtower
     container_name: wissenswerkstatt-watchtower
