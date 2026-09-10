@@ -27,7 +27,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH=/home/app/.local/bin:$PATH \
     APP_HOME=/app \
-    DATA_DIR=/app/data
+    DATA_DIR=/app/data \
+    PYTHONPATH=/
 
 # Nicht als root laufen
 RUN groupadd --system app \
@@ -49,4 +50,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD python -c "import urllib.request,sys; \
 sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8080/api/health', timeout=3).status == 200 else sys.exit(1)"
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers", "--forwarded-allow-ips=*"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers", "--forwarded-allow-ips=*"]
