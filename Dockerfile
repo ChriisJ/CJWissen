@@ -30,7 +30,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     DATA_DIR=/app/data
 
 # Nicht als root laufen
-RUN groupadd --system app && useradd --system --gid app --home /home/app app \
+RUN groupadd --system app \
+    && useradd --system --gid app --home /home/app --create-home --shell /bin/false app \
     && mkdir -p /app/data \
     && chown -R app:app /app /home/app
 
