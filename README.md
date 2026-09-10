@@ -17,6 +17,10 @@ GitHub Actions → GHCR → Watchtower in Portainer.
   Antwortsicherheit, Vorschlag für den nächsten Wiederholungstermin.
 - **Quellen kritisch** — bei aktuellen oder umstrittenen Fakten verlangt die
   Persona verifizierte Quellen und trennt Fakt, Vereinfachung und Unsicherheit.
+- **Web-Setup-Wizard** — kein `.env`-Gefrickel. Beim ersten Aufruf wählst du
+  deinen LLM-Provider (OpenAI, Ollama, LM Studio, Azure, Custom), trägst den
+  Key ein, klickst **Verbindung testen**, **Speichern & starten** — fertig.
+  Später jederzeit über den **⚙ Setup**-Tab änderbar.
 - **LLM-agnostisch** — funktioniert mit OpenAI, Azure OpenAI, Ollama,
   LM Studio, vLLM, etc. (jeder OpenAI-kompatible Endpunkt).
 
@@ -26,6 +30,7 @@ GitHub Actions → GHCR → Watchtower in Portainer.
                 ┌──────────────────────────────┐
    Browser ──▶  │  Wissenswerkstatt (FastAPI)  │  ◀── LLM (OpenAI-kompatibel)
                 │  - Chat-UI                   │
+                │  - Setup-Wizard              │
                 │  - SM-2 SRS                  │
                 │  - SQLite (Volume)           │
                 └──────────────┬───────────────┘
@@ -37,7 +42,7 @@ GitHub Actions → GHCR → Watchtower in Portainer.
                                ▲
                                │  GitHub Actions
                 ┌──────────────┴───────────────┐
-                │  ghcr.io/USER/wissenswerkstatt│
+                │  ghcr.io/USER/CJWissen        │
                 └──────────────────────────────┘
                                ▲
                 ┌──────────────┴───────────────┐
@@ -45,7 +50,7 @@ GitHub Actions → GHCR → Watchtower in Portainer.
                 └──────────────────────────────┘
 ```
 
-## Setup in 5 Schritten
+## Setup in 4 Schritten
 
 ### 1) Repo auf GitHub anlegen
 
@@ -59,78 +64,47 @@ git remote add origin git@github.com:<DEIN-USER>/wissenswerkstatt.git
 git push -u origin main
 ```
 
-> Das Repo heißt hier z.B. `dein-user/wissenswerkstatt`. Daraus ergibt sich
-> der Image-Pfad `ghcr.io/dein-user/wissenswerkstatt`.
-
 ### 2) GitHub Actions baut das Image automatisch
 
 Bei jedem Push auf `main` startet der Workflow
 `.github/workflows/docker-publish.yml`. Er baut Multi-Arch
 (`linux/amd64` + `linux/arm64`) und pusht das Image nach
-`ghcr.io/<USER>/wissenswerkstatt` mit den Tags `latest`, `<branch>` und `<sha>`.
+`ghcr.io/<USER>/<REPO>`. Dazu braucht dein PAT den Scope `workflow`.
 
-Du brauchst nichts weiter einzurichten — `GITHUB_TOKEN` reicht für GHCR.
-Falls das Image trotzdem „private" bleibt, in GitHub unter
-**Packages → Package settings** auf **Public** stellen.
+### 3) Portainer-Stack anlegen
 
-### 3) `.env` für Portainer vorbereiten
+**Portainer → Stacks → Add Stack** mit:
 
-Kopiere `.env.example` zu `.env` und trage deine LLM-Daten ein:
-
-```env
-# OpenAI
-LLM_BASE_URL=https://api.openai.com/v1
-LLM_API_KEY=sk-...
-LLM_MODEL=gpt-4o-mini
-
-# Oder lokal mit Ollama (auf dem Host):
-# LLM_BASE_URL=http://host.docker.internal:11434/v1
-# LLM_API_KEY=ollama
-# LLM_MODEL=llama3.1
-```
-
-Für Ollama/Local LLMs: `host.docker.internal` funktioniert auf Docker Desktop
-(Win/Mac) und Linux mit Docker ≥ 20.10. Sonst die IP des Host-Interfaces eintragen.
-
-### 4) Portainer-Stack anlegen
-
-**Portainer → Stacks → Add Stack** mit folgenden Optionen:
-
-- Name: `wissenswerkstatt`
-- Build method: **Git repository** (empfohlen) **oder Web editor**
-- Repository URL: `https://github.com/<DEIN-USER>/wissenswerkstatt.git`
-- Compose path: `docker-compose.yml`
-- **Environment variables**: `.env`-Inhalt hier reinkopieren
-  (Portainer fragt nach den Vars — am einfachsten vorher die `GHCR_USER`/`IMAGE_NAME` setzen):
+- **Build method**: Git repository
+- **Repository URL**: `https://github.com/<DEIN-USER>/wissenswerkstatt.git`
+- **Compose path**: `docker-compose.yml`
+- **Environment variables** — du brauchst jetzt **nur noch diese**:
 
 ```env
 GHCR_USER=ghcr.io/<DEIN-USER>
-IMAGE_NAME=wissenswerkstatt
+IMAGE_NAME=<REPO-NAME>
 IMAGE_TAG=latest
-LLM_BASE_URL=https://api.openai.com/v1
-LLM_API_KEY=sk-...
-LLM_MODEL=gpt-4o-mini
 APP_PORT=8080
 WATCHTOWER_POLL_INTERVAL=86400
 ```
 
-> **Wichtig:** In Portainer den Stack **nicht** mit `Build method = Web editor`
-> UND dem Git-Repo-Build mischen. Eine Methode wählen.
+> **Keine LLM-Variablen mehr nötig.** Die werden über den Wizard gesetzt.
 
 **Deploy the stack** — fertig.
 
-Die App läuft auf `http://<server-ip>:8080/`.
+### 4) Im Browser öffnen & einrichten
 
-### 5) Auto-Update ist bereits eingebaut
+`http://<server-ip>:8080/` aufrufen. Beim ersten Mal wirst du automatisch zum
+**Setup-Wizard** weitergeleitet:
 
-Der `watchtower`-Service im selben Compose prüft alle 24h (per Default) das
-Image `ghcr.io/<USER>/wissenswerkstatt:latest` und ersetzt den laufenden
-Container, sobald ein neuer Tag da ist. Das Volume `wissenswerkstatt_data`
-bleibt dabei unangetastet — deine Daten überleben jedes Update.
+1. **Provider wählen** (OpenAI / Ollama / LM Studio / Azure / Custom) — die
+   wichtigsten Felder werden automatisch ausgefüllt.
+2. **API-Key eintragen** (bei lokalen Endpunkten leer lassen).
+3. **Modellname** anpassen, falls dein Provider was anderes erwartet.
+4. **Verbindung testen** klicken — grünes Häkchen = alles ok.
+5. **Speichern & starten** → du landest in der Hauptapp.
 
-**Schnellerer Update-Zyklus:** `WATCHTOWER_POLL_INTERVAL=3600` (jede Stunde).
-
-**Manuell updaten ohne Watchtower:** In Portainer auf den Stack → **Pull and redeploy**.
+Änderungen später jederzeit über den **⚙ Setup**-Tab in der App.
 
 ## Bedienung
 
@@ -140,10 +114,15 @@ bleibt dabei unangetastet — deine Daten überleben jedes Update.
 4. *Sitzung beenden* → 3 Merksätze + max. 5 Karteikarten + Antwortsicherheit.
 5. Tab **Wiederholung** → fällige Karten mit 0–5 bewerten (SM-2 plant nächsten Termin).
 6. Tab **Fortschritt** → Übersicht nach Thema, Gesamtzahlen, durchschnittliche Sicherheit.
+7. Tab **⚙ Setup** → Provider, API-Key, Modell jederzeit anpassbar.
 
 ## API
 
-`GET  /api/health` — Healthcheck  
+`GET  /api/health` — Healthcheck (zeigt `configured: true/false`)  
+`GET  /api/setup` — aktuelle Konfiguration (Secrets maskiert)  
+`POST /api/setup` — Konfiguration speichern  
+`POST /api/setup/test` — Verbindung testen  
+`POST /api/setup/reset` — UI-Overrides löschen, Env greift wieder  
 `GET  /api/topics` — Themenfelder  
 `GET  /api/progress` — Statistik  
 `GET  /api/cards/due?limit=10` — fällige Karten  
@@ -155,6 +134,23 @@ bleibt dabei unangetastet — deine Daten überleben jedes Update.
 `POST /api/session/{id}/confirm-end` — Sitzung final schließen  
 
 OpenAPI-Doku unter `/docs`.
+
+## Optionale ENV-Konfiguration
+
+Diese Variablen funktionieren weiterhin als Fallback, wenn der Setup-Wizard
+nicht benutzt wird (z.B. für CI/CD oder headless-Deployments):
+
+```env
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_API_KEY=sk-...
+LLM_MODEL=gpt-4o-mini
+LLM_MAX_TOKENS=1500
+LLM_TEMPERATURE=0.4
+APP_SECRET=
+```
+
+**Wichtig**: Die im Wizard gesetzten Werte haben Vorrang vor den Env-Variablen.
+Über `POST /api/setup/reset` kann man auf Env-Fallback zurücksetzen.
 
 ## Entwicklung lokal
 
@@ -168,6 +164,7 @@ uvicorn app.main:app --reload --port 8080
 ## Datenspeicherung
 
 - SQLite-Datei: `/app/data/wissenswerkstatt.db` (im Volume `wissenswerkstatt_data`)
+- Runtime-Config (LLM-Key, Modell etc.) in der Tabelle `settings_kv` — überlebt Updates
 - WAL-Modus aktiv, Foreign Keys aktiv
 - Backups: `docker run --rm -v wissenswerkstatt_data:/data -v $PWD:/out alpine cp /data/wissenswerkstatt.db /out/`
 

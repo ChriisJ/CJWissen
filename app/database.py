@@ -61,6 +61,13 @@ CREATE TABLE IF NOT EXISTS user_profile (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
+
+-- Laufzeit-Konfiguration (überschreibt Env-Variablen, sofern gesetzt)
+CREATE TABLE IF NOT EXISTS settings_kv (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 """
 
 

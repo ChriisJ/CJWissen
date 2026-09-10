@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wissenswerkstatt — Einrichtung</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    .setup-wrap {
+      max-width: 720px;
+      margin: 40px auto;
+      padding: 0 16px 80px;
+    }
+    .setup-hero {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 30px;
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+    }
+    .setup-hero h1 { margin: 0 0 4px; }
+    .setup-hero p { color: var(--muted); margin: 0; }
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 18px 0 4px;
+    }
+    .preset {
+      background: var(--bg-elev-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: border-color .12s, background .12s;
+      text-align: left;
+    }
+    .preset:hover { border-color: var(--accent); }
+    .preset.selected {
+      border-color: var(--accent);
+      background: rgba(79, 140, 255, 0.12);
+    }
+    .preset .p-label { font-weight: 600; }
+    .preset .p-hint { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .form-row { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+    .form-row label { font-size: 13px; color: var(--muted); }
+    .form-row .help { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .form-row .row { display: flex; gap: 10px; align-items: center; }
+    .form-row .row > * { flex: 1; }
+    .advanced { margin-top: 18px; }
+    .advanced summary {
+      cursor: pointer; color: var(--muted); font-size: 13px;
+      padding: 6px 0; user-select: none;
+    }
+    .advanced[open] summary { color: var(--text); }
+    .status-line {
+      margin-top: 14px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      display: none;
+    }
+    .status-line.show { display: block; }
+    .status-line.ok { background: rgba(70, 192, 135, 0.1); border: 1px solid var(--good); color: var(--good); }
+    .status-line.err { background: rgba(226, 92, 92, 0.1); border: 1px solid var(--bad); color: var(--bad); }
+    .actions {
+      display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;
+    }
+    .badge-tag {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--bg-elev-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      margin-left: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="setup-wrap">
+    <div class="setup-hero">
+      <h1>Wissenswerkstatt <span class="badge-tag" id="statusBadge">Setup</span></h1>
+      <p>
+        Einmal konfigurieren, dann läuft die App. Du kannst hier später jederzeit
+        alles ändern. Die Daten landen verschlüsselbar in deinem
+        <code>wissenswerkstatt_data</code>-Volume und überleben jedes Update.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>1. LLM-Provider wählen</h2>
+      <p class="muted">Wähle eine Vorlage — die wichtigsten Felder sind dann schon ausgefüllt.</p>
+      <div class="preset-grid" id="presets"></div>
+
+      <div class="form-row">
+        <label for="llm_base_url">Base URL <span class="muted">(OpenAI-kompatibler Endpunkt)</span></label>
+        <input type="text" id="llm_base_url" placeholder="https://api.openai.com/v1" />
+        <div class="help" id="urlHelp"></div>
+      </div>
+
+      <div class="form-row">
+        <label for="llm_api_key">API Key</label>
+        <div class="row">
+          <input type="password" id="llm_api_key" placeholder="sk-…" autocomplete="off" />
+          <button type="button" id="toggleKey" class="ghost" style="flex:0;min-width:80px">Zeigen</button>
+        </div>
+        <div class="help" id="keyHelp">
+          Leer lassen, wenn dein Endpunkt keinen Key braucht (z.B. lokales Ollama ohne Auth).
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label for="llm_model">Modell</label>
+        <input type="text" id="llm_model" placeholder="gpt-4o-mini" />
+        <div class="help">Der exakte Name, wie der Provider ihn erwartet.</div>
+      </div>
+
+      <details class="advanced">
+        <summary>Erweiterte Einstellungen</summary>
+        <div class="form-row">
+          <label for="llm_max_tokens">Max. Tokens pro Antwort</label>
+          <input type="number" id="llm_max_tokens" min="50" max="32000" />
+        </div>
+        <div class="form-row">
+          <label for="llm_temperature">Temperature (0.0 = streng, 1.0 = kreativ)</label>
+          <input type="number" id="llm_temperature" min="0" max="2" step="0.1" />
+        </div>
+        <div class="form-row">
+          <label for="app_secret">App-Geheimnis (optional)</label>
+          <input type="text" id="app_secret" placeholder="z.B. ein langes Zufallspasswort" />
+          <div class="help">Wenn gesetzt, ist die UI per <code>?secret=…</code> oder <code>x-app-secret</code>-Header geschützt.</div>
+        </div>
+      </details>
+
+      <div id="statusLine" class="status-line"></div>
+
+      <div class="actions">
+        <button id="testBtn" class="ghost">Verbindung testen</button>
+        <button id="saveBtn" class="primary">Speichern & starten</button>
+        <a href="/" id="skipLink" class="ghost" style="display:none;text-decoration:none;line-height:36px">→ App öffnen</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Provider-Hinweise</h3>
+      <ul class="muted" style="line-height:1.7;padding-left:20px">
+        <li><b>Ollama (lokal):</b> LLM_BASE_URL = <code>http://host.docker.internal:11434/v1</code>, API Key leer, Modell z.B. <code>llama3.1</code> oder <code>mistral</code>.</li>
+        <li><b>LM Studio:</b> LLM_BASE_URL = <code>http://host.docker.internal:1234/v1</code>, API Key beliebig (oft <code>lm-studio</code>), Modellname wie in LM Studio angezeigt.</li>
+        <li><b>OpenAI:</b> LLM_BASE_URL = <code>https://api.openai.com/v1</code>, API Key von <code>platform.openai.com</code>, günstiges Modell: <code>gpt-4o-mini</code>.</li>
+        <li><b>Azure OpenAI:</b> LLM_BASE_URL = <code>https://&lt;resource&gt;.openai.azure.com/openai/v1</code>, Modell = dein Deployment-Name.</li>
+        <li><b>Selbst-Hosting (vLLM etc.):</b> LLM_BASE_URL = <code>http://&lt;host-ip&gt;:&lt;port&gt;/v1</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const $ = (s) => document.querySelector(s);
+
+    const PRESETS = [
+      { id: "openai",  label: "OpenAI",          hint: "GPT-4o, GPT-4o-mini",
+        url: "https://api.openai.com/v1", model: "gpt-4o-mini" },
+      { id: "ollama",  label: "Ollama (lokal)",  hint: "Llama 3, Mistral, Phi",
+        url: "http://host.docker.internal:11434/v1", model: "llama3.1", noKey: true },
+      { id: "lmstudio",label: "LM Studio",       hint: "lokale GGUF-Modelle",
+        url: "http://host.docker.internal:1234/v1", model: "", noKey: true },
+      { id: "azure",   label: "Azure OpenAI",    hint: "Enterprise / DSGVO",
+        url: "", model: "" },
+      { id: "custom",  label: "Benutzerdefiniert", hint: "eigener Endpunkt",
+        url: "", model: "", noKey: true },
+    ];
+
+    // ---------- Presets rendern ----------
+    const presetsEl = $("#presets");
+    let activePreset = null;
+    for (const p of PRESETS) {
+      const el = document.createElement("div");
+      el.className = "preset";
+      el.dataset.id = p.id;
+      el.innerHTML = `<div class="p-label">${p.label}</div>
+                      <div class="p-hint">${p.hint}</div>`;
+      el.addEventListener("click", () => selectPreset(p.id));
+      presetsEl.appendChild(el);
+    }
+
+    function selectPreset(id) {
+      activePreset = id;
+      $$(".preset").forEach((el) => el.classList.toggle("selected", el.dataset.id === id));
+      const p = PRESETS.find((x) => x.id === id);
+      if (p.url) $("#llm_base_url").value = p.url;
+      if (p.model) $("#llm_model").value = p.model;
+      $("#urlHelp").textContent = p.noKey
+        ? "Dieser Provider braucht in der Regel keinen API-Key."
+        : "Du brauchst einen API-Key von diesem Provider.";
+      $("#keyHelp").textContent = p.noKey
+        ? "Leer lassen — lokale Endpunkte akzeptieren Anfragen oft ohne Key."
+        : "Pflicht — der Key wird nur lokal in deinem Volume gespeichert.";
+    }
+    const $$ = (s) => document.querySelectorAll(s);
+
+    // ---------- Aktuellen Zustand laden ----------
+    async function loadCurrent() {
+      try {
+        const r = await fetch("/api/setup").then((x) => x.json());
+        if (r.configured) $("#statusBadge").textContent = "Konfiguriert";
+        // Vorhandene Werte als Default übernehmen
+        if (r.values.llm_base_url) $("#llm_base_url").value = r.values.llm_base_url;
+        if (r.values.llm_model) $("#llm_model").value = r.values.llm_model;
+        $("#llm_max_tokens").value = r.values.llm_max_tokens;
+        $("#llm_temperature").value = r.values.llm_temperature;
+        // Preset heuristisch wählen
+        const u = (r.values.llm_base_url || "").toLowerCase();
+        if (u.includes("openai.azure")) selectPreset("azure");
+        else if (u.includes("api.openai.com")) selectPreset("openai");
+        else if (u.includes("11434")) selectPreset("ollama");
+        else if (u.includes("1234")) selectPreset("lmstudio");
+        else if (r.values.llm_base_url) selectPreset("custom");
+        if (r.configured) {
+          $("#skipLink").style.display = "inline-block";
+        }
+      } catch (e) {
+        // Initial-Load darf still fehlschlagen
+      }
+    }
+
+    // ---------- Test-Verbindung ----------
+    $("#testBtn").addEventListener("click", async () => {
+      const line = $("#statusLine");
+      line.className = "status-line show";
+      line.textContent = "Teste Verbindung …";
+      // Erst die aktuellen Form-Werte speichern (temporär), damit der Test sie sieht
+      await save({ silent: true });
+      try {
+        const r = await fetch("/api/setup/test", { method: "POST" }).then((x) => {
+          if (!x.ok) return x.json().then((e) => { throw new Error(e.detail || "Fehler"); });
+          return x.json();
+        });
+        let msg = `✓ Verbindung ok — ${r.endpoint}`;
+        if (r.model_available === true) msg += ` · Modell „${r.model}" verfügbar`;
+        if (r.model_available === false) msg += ` · ⚠ Modell „${r.model}" nicht in der Liste`;
+        if (r.models_sample && r.models_sample.length)
+          msg += ` · ${r.models_sample.length} Modelle bekannt`;
+        line.className = "status-line show ok";
+        line.textContent = msg;
+      } catch (e) {
+        line.className = "status-line show err";
+        line.textContent = "✗ " + e.message;
+      }
+    });
+
+    // ---------- Speichern ----------
+    $("#saveBtn").addEventListener("click", async (ev) => {
+      ev.preventDefault();
+      await save({ silent: false });
+    });
+
+    async function save({ silent }) {
+      const payload = {
+        llm_base_url:    $("#llm_base_url").value.trim(),
+        llm_api_key:     $("#llm_api_key").value, // darf leer sein
+        llm_model:       $("#llm_model").value.trim(),
+        llm_max_tokens:  $("#llm_max_tokens").value,
+        llm_temperature: $("#llm_temperature").value,
+        app_secret:      $("#app_secret").value,
+      };
+      const r = await fetch("/api/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then((x) => x.json());
+      if (!silent) {
+        if (r.configured) {
+          window.location.href = "/";
+        } else {
+          const line = $("#statusLine");
+          line.className = "status-line show err";
+          line.textContent = "✗ Konfiguration unvollständig — API-Key fehlt oder Endpunkt nicht erreichbar (für lokale Endpunkte reicht die URL).";
+        }
+      }
+    }
+
+    // ---------- Key anzeigen/verbergen ----------
+    $("#toggleKey").addEventListener("click", () => {
+      const i = $("#llm_api_key");
+      const b = $("#toggleKey");
+      if (i.type === "password") { i.type = "text"; b.textContent = "Verbergen"; }
+      else { i.type = "password"; b.textContent = "Zeigen"; }
+    });
+
+    loadCurrent();
+  </script>
+</body>
+</html>
