@@ -41,9 +41,3 @@ logs/
 
 # Docker
 docker-compose.override.yml
-
-# GitHub-Actions-Workflow — wird manuell über die GitHub-UI hinzugefügt,
-# da das initiale Push-PAT keinen 'workflow'-Scope hat.
-# Sobald das Repo einen Workflow hat und der PAT-Scope erweitert wurde,
-# diese Zeile entfernen.
-/.github/workflows/
